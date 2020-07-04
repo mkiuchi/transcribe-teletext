@@ -56,10 +56,16 @@ def teletext(jsonobj):
                 if idx >= jsonlength:
                     break
         else:
-            if jsonobj[idx]["alternatives"][0]["content"] == ',':
-                print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"], end=' ')
+            if args.lang == "japanese":
+                if jsonobj[idx]["alternatives"][0]["content"] == '、':
+                    print(jsonobj[idx]["alternatives"][0]["content"], end='')
+                else:
+                    print(jsonobj[idx]["alternatives"][0]["content"], end='')
             else:
-                print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"])
+                if jsonobj[idx]["alternatives"][0]["content"] == ',':
+                    print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"], end=' ')
+                else:
+                    print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"])
             idx += 1
             if idx >= jsonlength:
                 break
