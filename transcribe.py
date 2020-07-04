@@ -10,6 +10,11 @@ g1.add_argument("-f", "--file",
                   required=True,
                   help="input transcribed json file",
                   type=str)
+g3 = parser.add_argument_group("language")
+g3.add_argument("-l", "--lang",
+                  required=False,
+                  help="input language",
+                  type=str)
 g2 = parser.add_mutually_exclusive_group(required=True)
 g2.add_argument("-r", "--realtime",
                   help="output realtime as teletext",
@@ -17,6 +22,8 @@ g2.add_argument("-r", "--realtime",
 g2.add_argument("-d", "--dump",
                   help="dump whole output",
                   action="store_true")
+
+sentenceSpace = float(1.5)
 
 def readTranscribe(filename):
     with open(filename) as fh:
@@ -30,13 +37,21 @@ def teletext(jsonobj):
     print("--- START TELETEXT ---")
     idx = int(0)
     ntime = float(0.0)
+    prevtime = float(0.0)
     jsonlength = len(jsonobj)
     n1 = datetime.now()
     while True:
         if "start_time" in jsonobj[idx]:
             #print(float(jsonobj[idx]["start_time"]), ntime)
             if float(jsonobj[idx]["start_time"]) < ntime:
-                print(jsonobj[idx]["alternatives"][0]["content"], end=' ')
+                if args.lang == "japanese":
+                    if (ntime - prevtime) > sentenceSpace and idx>0:
+                        print("\n" + jsonobj[idx]["alternatives"][0]["content"], end='')
+                    else:
+                        print(jsonobj[idx]["alternatives"][0]["content"], end='')
+                    prevtime = float(jsonobj[idx]["start_time"])
+                else:
+                    print(jsonobj[idx]["alternatives"][0]["content"], end=' ')
                 idx += 1
                 if idx >= jsonlength:
                     break
@@ -54,19 +69,33 @@ def teletext(jsonobj):
 
 def dumpTranscribe(jsonobj):
     idx = int(0)
+    prevtime = float(0.0)
     jsonlength = len(jsonobj)
     while True:
         if "start_time" in jsonobj[idx]:
             #print(float(jsonobj[idx]["start_time"]), ntime)
-            print(jsonobj[idx]["alternatives"][0]["content"], end=' ')
+            if args.lang == "japanese":
+                if (float(jsonobj[idx]["start_time"]) - prevtime) > sentenceSpace and idx>0:
+                    print("\n" + jsonobj[idx]["alternatives"][0]["content"], end='')
+                else:
+                    print(jsonobj[idx]["alternatives"][0]["content"], end='')
+                prevtime = float(jsonobj[idx]["start_time"])
+            else:
+                print(jsonobj[idx]["alternatives"][0]["content"], end=' ')
             idx += 1
             if idx >= jsonlength:
                 break
         else:
-            if jsonobj[idx]["alternatives"][0]["content"] == ',':
-                print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"], end=' ')
+            if args.lang == "japanese":
+                if jsonobj[idx]["alternatives"][0]["content"] == '、':
+                    print(jsonobj[idx]["alternatives"][0]["content"], end='')
+                else:
+                    print(jsonobj[idx]["alternatives"][0]["content"], end='')
             else:
-                print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"])
+                if jsonobj[idx]["alternatives"][0]["content"] == ',':
+                    print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"], end=' ')
+                else:
+                    print(chr(0x08)+jsonobj[idx]["alternatives"][0]["content"])
             idx += 1
             if idx >= jsonlength:
                 break
